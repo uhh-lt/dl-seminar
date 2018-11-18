@@ -16,7 +16,7 @@ from tensorflow.contrib.tensorboard.plugins import projector
 
 # Use tensorflows FLAGS to generate program options with defaults to change parameters from the commandline
 
-tf.flags.DEFINE_string("corpus", "w.txt", "Path to the input text corpus")
+tf.flags.DEFINE_string("corpus", "wikipedia-corpus-2mb.txt", "Path to the input text corpus")
 tf.flags.DEFINE_integer("num_neg_samples", 4, "Number of negative samples")
 tf.flags.DEFINE_integer("steps", 100000, "Number of training steps")
 tf.flags.DEFINE_float("learning_rate", 1.0, "The learning rate")
@@ -24,7 +24,7 @@ tf.flags.DEFINE_integer("embedding_size", 100, "Size of the embedding")
 tf.flags.DEFINE_boolean("lower_case", True, "Whether the corpus should be lowercased")
 tf.flags.DEFINE_boolean("skip_gram", True, "Whether skip gram should be used or CBOW")
 tf.flags.DEFINE_integer("min_frequency", 3, "Words that occur lower than this frequency are discarded as OOV")
-tf.flags.DEFINE_string("optimizer_type", "adam", "Optimizer type: 'adam' or 'sgd'")
+tf.flags.DEFINE_string("optimizer_type", "sgd", "Optimizer type: 'adam' or 'sgd'")
 
 FLAGS = tf.flags.FLAGS
 

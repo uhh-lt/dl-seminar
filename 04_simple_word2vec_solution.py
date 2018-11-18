@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+
 """
 Simplified Word2Vec implementation in Tensorflow
-
 """
 
 import tensorflow as tf
@@ -10,21 +10,21 @@ import nltk
 import math
 import os
 import time
-
 import numpy as np
 from collections import defaultdict
-
 from tensorflow.contrib.tensorboard.plugins import projector
 
-# You can use tensorflows FLAGS to generate program options with dfefaults, so that you can change parameters from the commandline
+# Use tensorflows FLAGS to generate program options with defaults to change parameters from the commandline
 
+tf.flags.DEFINE_string("corpus", "wikipedia-corpus-2mb.txt", "Path to the input text corpus")
 tf.flags.DEFINE_integer("num_neg_samples", 4, "Number of negative samples")
 tf.flags.DEFINE_integer("steps", 100000, "Number of training steps")
-tf.flags.DEFINE_float("learning_rate", 1.0, "Number of training steps")
-tf.flags.DEFINE_float("embedding_size", 100, "Size of the embedding")
+tf.flags.DEFINE_float("learning_rate", 1.0, "The learning rate")
+tf.flags.DEFINE_integer("embedding_size", 100, "Size of the embedding")
 tf.flags.DEFINE_boolean("lower_case", True, "Whether the corpus should be lowercased")
 tf.flags.DEFINE_boolean("skip_gram", True, "Whether skip gram should be used or CBOW")
-tf.flags.DEFINE_integer("min_frequency" , 3  , "Words that occur lower than this frequency are discarded as OOV")
+tf.flags.DEFINE_integer("min_frequency", 3, "Words that occur lower than this frequency are discarded as OOV")
+tf.flags.DEFINE_string("optimizer_type", "sgd", "Optimizer type: 'adam' or 'sgd'")
 
 FLAGS = tf.flags.FLAGS
 
@@ -56,8 +56,13 @@ def build_graph(vocabulary_size, num_sampled, embedding_size, learning_rate):
                      inputs=embed,
                      num_sampled=num_sampled,
                      num_classes=vocabulary_size))
+     
+    if FLAGS.optimizer_type == "adam":
+        optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss)
+    else:
+        optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(loss)
     
-    optimizer = tf.train.GradientDescentOptimizer(learning_rate=1.0).minimize(loss)
+    #optimizer = tf.train.GradientDescentOptimizer(learning_rate=1.0).minimize(loss)
     #optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss)
     
     return embeddings, contexts, targets, optimizer, loss
@@ -95,7 +100,7 @@ def generate_batch(corpus, batch_size, skip_gram=True):
     return contexts, targets
     
 # load a text file, tokenize it, count occurences and build a word encoder that translate a word into a unique id (sorted by word frequency)    
-def load_corpus(filename='t8.shakespeare.txt', lower_case=True, min_frequency=3):
+def load_corpus(filename='wikipedia-corpus-2mb.txt', lower_case=True, min_frequency=3):
     corpus = []
     
     i=0
@@ -197,16 +202,21 @@ def train(corpus, word_encoder, vocabulary_size, num_samples, steps):
             
             # implement your neighboor search here
 
+            # save the embedding matrix 
 
-if __name__ == "__main__":                
-    corpus, word_encoder = load_corpus(lower_case=FLAGS.lower_case, min_frequency=FLAGS.min_frequency)
-    
+def main(args):
+    print('a {} flower'.format(FLAGS.corpus))
 
+    corpus, word_encoder = load_corpus(filename=FLAGS.corpus, lower_case=FLAGS.lower_case, min_frequency=FLAGS.min_frequency)
     corpus_num = [word_encoder[word] for word in corpus]
     
     print('First few tokens of corpus:', corpus[:100])
     print('First few tokens of corpus_num:', list(corpus_num[:100]))
     
     corpus_num = np.asarray(corpus_num)
-    
-    train(corpus_num, word_encoder, vocabulary_size=max(corpus_num)+1, num_samples=FLAGS.num_neg_samples , steps=FLAGS.steps)
+    train(corpus_num, word_encoder, vocabulary_size=max(corpus_num)+1, num_samples=FLAGS.num_neg_samples, steps=FLAGS.steps)
+
+
+if __name__ == "__main__":                
+    tf.app.run()
+
