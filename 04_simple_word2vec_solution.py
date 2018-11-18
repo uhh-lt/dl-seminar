@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-"""
-Simplified Word2Vec implementation in Tensorflow
-"""
+# A simplified Word2Vec implementation in Tensorflow
 
 import tensorflow as tf
 import nltk
@@ -13,20 +11,6 @@ import time
 import numpy as np
 from collections import defaultdict
 from tensorflow.contrib.tensorboard.plugins import projector
-
-# Use tensorflows FLAGS to generate program options with defaults to change parameters from the commandline
-
-tf.flags.DEFINE_string("corpus", "wikipedia-corpus-2mb.txt", "Path to the input text corpus")
-tf.flags.DEFINE_integer("num_neg_samples", 4, "Number of negative samples")
-tf.flags.DEFINE_integer("steps", 100000, "Number of training steps")
-tf.flags.DEFINE_float("learning_rate", 1.0, "The learning rate")
-tf.flags.DEFINE_integer("embedding_size", 100, "Size of the embedding")
-tf.flags.DEFINE_boolean("lower_case", True, "Whether the corpus should be lowercased")
-tf.flags.DEFINE_boolean("skip_gram", True, "Whether skip gram should be used or CBOW")
-tf.flags.DEFINE_integer("min_frequency", 3, "Words that occur lower than this frequency are discarded as OOV")
-tf.flags.DEFINE_string("optimizer_type", "sgd", "Optimizer type: 'adam' or 'sgd'")
-
-FLAGS = tf.flags.FLAGS
 
 
 def ensure_dir(file_path):
@@ -97,16 +81,19 @@ def generate_batch(corpus, batch_size, skip_gram=True):
         targets[i*2+1] = right[1]
             
     return contexts, targets
+   
+
+def load_corpus(filename, lower_case=True, min_frequency=3):
+    """ Load a text file, tokenize it, count occurences and build a word encoder that
+    translate a word into a unique id (sorted by word frequency) """
     
-# load a text file, tokenize it, count occurences and build a word encoder that translate a word into a unique id (sorted by word frequency)    
-def load_corpus(filename='t8.shakespeare.txt', lower_case=True, min_frequency=3):
     corpus = []
     
-    i=0
+    i = 0
     with open(filename, 'r') as in_file:
         for line in in_file:
             if i % 1000 == 0:
-                print('Loading ',filename,', processing line',i)
+                print('Loading {} processing line {}'.format(filename, i))
             
             if line[-1]=='\n':
                 line = line[:-1]
@@ -114,12 +101,10 @@ def load_corpus(filename='t8.shakespeare.txt', lower_case=True, min_frequency=3)
             if lower_case:
                 line = line.lower()
             
-            # You need to run nltk.download('punkt') for this to work:
             corpus += nltk.word_tokenize(line)
-            
             i+=1
     
-    print('compute word encoder...')
+    print('Compute word encoder...')
     word_counter = defaultdict(int)
     
     for word in corpus:
@@ -127,24 +112,25 @@ def load_corpus(filename='t8.shakespeare.txt', lower_case=True, min_frequency=3)
     
     word_counter = list(word_counter.items())
     word_counter = [elem for elem in word_counter if elem[1] >= min_frequency]
-    word_counter.sort(key=lambda x:x[1], reverse=True)
+    word_counter.sort(key=lambda x: x[1], reverse=True)
     
-    word_encoder = defaultdict(int)
+    word2index = defaultdict(int)
     
-    for i,elem in enumerate(word_counter):
-        word_encoder[elem[0]] = i
+    for i, elem in enumerate(word_counter):
+        word2index[elem[0]] = i
         
     print('done')
     
-    return corpus, word_encoder
+    return corpus, word2index
 
-def train(corpus, word_encoder, vocabulary_size, num_samples, steps):   
+
+def train(corpus, word2index, vocabulary_size, num_samples, steps, optimizer_type, learning_rate, embedding_size, skip_gram, batch_size):   
     with tf.device('/cpu'):
         with tf.Session() as sess:
             embeddings, contexts, targets, optimizer, loss = build_graph(vocabulary_size, 
-	        num_samples, FLAGS.embedding_size, FLAGS.learning_rate, FLAGS.optimizer_type)
+	        num_samples, embedding_size, learning_rate, optimizer_type)
             
-            ## summary ops  
+            # summary ops  
             timestamp = str(int(time.time()))
             train_summary_dir = os.path.join('./', 'w2v_summaries_' + timestamp) + '/'
             ensure_dir(train_summary_dir)
@@ -152,7 +138,7 @@ def train(corpus, word_encoder, vocabulary_size, num_samples, steps):
             model_ckpt_file = os.path.join('./w2v_summaries_'+ timestamp + '/', 'model.ckpt')    
             vocab_file = os.path.join(train_summary_dir, 'metadata.tsv')  
 
-            vocab_items = list(word_encoder.items())
+            vocab_items = list(word2index.items())
             vocab_items.sort(key=lambda x:x[1])
             print(vocab_items[:100])
             vocab_list = [elem[0] for elem in vocab_items if elem[1] > 0]
@@ -181,7 +167,7 @@ def train(corpus, word_encoder, vocabulary_size, num_samples, steps):
             
             # now do batched SGD training
             for current_step in range(steps):
-                inputs, labels = generate_batch(corpus, batch_size=32, skip_gram=FLAGS.skip_gram)
+                inputs, labels = generate_batch(corpus, batch_size=batch_size, skip_gram=skip_gram)
                 feed_dict = {contexts: inputs, targets: labels}
                 _, cur_loss = sess.run([optimizer, loss], feed_dict=feed_dict)
                 
@@ -203,17 +189,33 @@ def train(corpus, word_encoder, vocabulary_size, num_samples, steps):
 
             # save the embedding matrix 
 
-def main(args):
-    print('a {} flower'.format(FLAGS.corpus))
 
-    corpus, word_encoder = load_corpus(filename=FLAGS.corpus, lower_case=FLAGS.lower_case, min_frequency=FLAGS.min_frequency)
-    corpus_num = [word_encoder[word] for word in corpus]
+# Use tensorflows FLAGS to generate program options with defaults to change parameters from the commandline
+tf.flags.DEFINE_string("corpus", "wikipedia-corpus-2mb.txt", "Path to the input text corpus")
+tf.flags.DEFINE_integer("num_neg_samples", 4, "Number of negative samples")
+tf.flags.DEFINE_integer("steps", 100000, "Number of training steps")
+tf.flags.DEFINE_float("learning_rate", 1.0, "The learning rate")
+tf.flags.DEFINE_integer("embedding_size", 100, "Size of the embedding")
+tf.flags.DEFINE_boolean("lower_case", True, "Whether the corpus should be lowercased")
+tf.flags.DEFINE_boolean("skip_gram", True, "Whether skip gram should be used or CBOW")
+tf.flags.DEFINE_integer("min_frequency", 3, "Words that occur lower than this frequency are discarded as OOV")
+tf.flags.DEFINE_string("optimizer_type", "sgd", "Optimizer type: 'adam' or 'sgd'")
+tf.flags.DEFINE_integer("batch_size", 32, "Batch size")
+FLAGS = tf.flags.FLAGS
+
+
+def main(args):
+    corpus, word2index = load_corpus(filename=FLAGS.corpus, lower_case=FLAGS.lower_case, min_frequency=FLAGS.min_frequency)
+    corpus_num = [word2index[word] for word in corpus]
     
     print('First few tokens of corpus:', corpus[:100])
     print('First few tokens of corpus_num:', list(corpus_num[:100]))
     
     corpus_num = np.asarray(corpus_num)
-    train(corpus_num, word_encoder, vocabulary_size=max(corpus_num)+1, num_samples=FLAGS.num_neg_samples, steps=FLAGS.steps)
+    train(corpus_num, word2index, vocabulary_size=max(corpus_num)+1,
+            num_samples=FLAGS.num_neg_samples, steps=FLAGS.steps,
+            optimizer_type=FLAGS.optimizer_type, learning_rate=FLAGS.learning_rate, embedding_size=FLAGS.embedding_size,
+            skip_gram=FLAGS.skip_gram, batch_size=FLAGS.batch_size)
 
 
 if __name__ == "__main__":                
