@@ -28,12 +28,14 @@ tf.flags.DEFINE_string("optimizer_type", "sgd", "Optimizer type: 'adam' or 'sgd'
 
 FLAGS = tf.flags.FLAGS
 
+
 def ensure_dir(file_path):
     directory = os.path.dirname(file_path)
     if not os.path.exists(directory):
         os.makedirs(directory)
 
-def build_graph(vocabulary_size, num_sampled, embedding_size, learning_rate):
+
+def build_graph(vocabulary_size, num_sampled, embedding_size, learning_rate, optimizer_type):
     # Placeholders for inputs
     contexts = tf.placeholder(tf.int32, shape=[None])
     targets = tf.placeholder(tf.int32, shape=[None, 1])
@@ -56,19 +58,16 @@ def build_graph(vocabulary_size, num_sampled, embedding_size, learning_rate):
                      inputs=embed,
                      num_sampled=num_sampled,
                      num_classes=vocabulary_size))
-     
-    if FLAGS.optimizer_type == "adam":
+    
+    if optimizer_type == "adam":
         optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss)
     else:
         optimizer = tf.train.GradientDescentOptimizer(learning_rate=learning_rate).minimize(loss)
     
-    #optimizer = tf.train.GradientDescentOptimizer(learning_rate=1.0).minimize(loss)
-    #optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate).minimize(loss)
-    
     return embeddings, contexts, targets, optimizer, loss
 
+
 def generate_batch(corpus, batch_size, skip_gram=True):
-    
     contexts = np.ndarray(shape=(batch_size*2), dtype=np.int32)
     targets = np.ndarray(shape=(batch_size*2, 1), dtype=np.int32)
     
@@ -100,7 +99,7 @@ def generate_batch(corpus, batch_size, skip_gram=True):
     return contexts, targets
     
 # load a text file, tokenize it, count occurences and build a word encoder that translate a word into a unique id (sorted by word frequency)    
-def load_corpus(filename='wikipedia-corpus-2mb.txt', lower_case=True, min_frequency=3):
+def load_corpus(filename='t8.shakespeare.txt', lower_case=True, min_frequency=3):
     corpus = []
     
     i=0
@@ -142,8 +141,8 @@ def load_corpus(filename='wikipedia-corpus-2mb.txt', lower_case=True, min_freque
 def train(corpus, word_encoder, vocabulary_size, num_samples, steps):   
     with tf.device('/cpu'):
         with tf.Session() as sess:
-            embeddings, contexts, targets, optimizer, loss = build_graph(vocabulary_size, num_samples,
-                                                                                  FLAGS.embedding_size, FLAGS.learning_rate)
+            embeddings, contexts, targets, optimizer, loss = build_graph(vocabulary_size, 
+	        num_samples, FLAGS.embedding_size, FLAGS.learning_rate, FLAGS.optimizer_type)
             
             ## summary ops  
             timestamp = str(int(time.time()))
@@ -175,12 +174,12 @@ def train(corpus, word_encoder, vocabulary_size, num_samples, steps):
 
             saver = tf.train.Saver(tf.global_variables())
 
-            ## initalize parameters
+            # initalize parameters
             sess.run(tf.global_variables_initializer())
             
             losses = []
             
-            ## now do batched SGD training
+            # now do batched SGD training
             for current_step in range(steps):
                 inputs, labels = generate_batch(corpus, batch_size=32, skip_gram=FLAGS.skip_gram)
                 feed_dict = {contexts: inputs, targets: labels}
