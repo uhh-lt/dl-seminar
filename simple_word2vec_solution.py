@@ -13,10 +13,8 @@ from collections import defaultdict
 from tensorflow.contrib.tensorboard.plugins import projector
 
 
-def ensure_dir(file_path):
-    directory = os.path.dirname(file_path)
-    if not os.path.exists(directory):
-        os.makedirs(directory)
+def ensure_dir(f):
+    if not os.path.exists(f): os.makedirs(f)
 
 
 def build_graph(vocabulary_size, num_sampled, embedding_size, learning_rate, optimizer_type):
@@ -28,15 +26,16 @@ def build_graph(vocabulary_size, num_sampled, embedding_size, learning_rate, opt
         tf.random_uniform([vocabulary_size, embedding_size], -1.0, 1.0))
     
     nce_weights = tf.Variable(
-      tf.truncated_normal([vocabulary_size, embedding_size],
+        tf.truncated_normal([vocabulary_size, embedding_size],
                           stddev=1.0 / math.sqrt(embedding_size)))
+
     nce_biases = tf.Variable(tf.zeros([vocabulary_size]))
     
     embed = tf.nn.embedding_lookup(embeddings, contexts)
     
     # Compute the NCE loss, using a sample of the negative labels each time.
     loss = tf.reduce_mean(
-      tf.nn.nce_loss(weights=nce_weights,
+        tf.nn.nce_loss(weights=nce_weights,
                      biases=nce_biases,
                      labels=targets,
                      inputs=embed,
@@ -51,34 +50,37 @@ def build_graph(vocabulary_size, num_sampled, embedding_size, learning_rate, opt
     return embeddings, contexts, targets, optimizer, loss
 
 
-def generate_batch(corpus, batch_size, skip_gram=True):
+def generate_batch(corpus_num, batch_size, skip_gram=True):
+    """ Generate a batch in the form of two numpy vectors of (i) target and (ii) context word ids. """
+
     contexts = np.ndarray(shape=(batch_size*2), dtype=np.int32)
     targets = np.ndarray(shape=(batch_size*2, 1), dtype=np.int32)
     
     for i in range(batch_size):
-        random_token_num = int(math.floor(np.random.random_sample() * (len(corpus) -2))) +1
+        random_token_num = int(math.floor(np.random.random_sample() * (len(corpus_num) -2))) + 1
         
-        	# E.g. for "the quick brown fox jumped over the lazy dog"
-		# (context, target) pairs: ([the, brown], quick), ([quick, fox], brown), ([brown, jumped], fox)
-		# We can simplify to: (the, quick), (brown, quick), (quick, brown), (fox, brown), ... CBOW
-         # => contexts is ids of [the, brown, quick, fox, ...], labels/targets: [quick, quick, brown, brown, ...]
-		# (quick, the), (quick, brown), (brown, quick), (brown, fox), ... Skip-gram
-         # => contexts and targets reversed
+        # E.g. for "the quick brown fox jumped over the lazy dog"
+        # (context, target) pairs: ([the, brown], quick), ([quick, fox], brown), ([brown, jumped], fox)
+        # We can simplify to: (the, quick), (brown, quick), (quick, brown), (fox, brown), ... CBOW
+        # => contexts is ids of [the, brown, quick, fox, ...], labels/targets: [quick, quick, brown, brown, ...]
+	# (quick, the), (quick, brown), (brown, quick), (brown, fox), ... Skip-gram
+        # => contexts and targets reversed
         
         # left context pair
-        left = [corpus[random_token_num-1], corpus[random_token_num]]
+        left = [corpus_num[random_token_num - 1], corpus_num[random_token_num]]
+        
         # right context pair
-        right = [corpus[random_token_num+1], corpus[random_token_num]]
+        right = [corpus_num[random_token_num + 1], corpus_num[random_token_num]]
         
         if skip_gram:
             left.reverse()
             right.reverse()
         
         contexts[i*2] = left[0]
-        contexts[i*2+1] = right[0]
+        contexts[i*2 + 1] = right[0]
         
         targets[i*2] = left[1]
-        targets[i*2+1] = right[1]
+        targets[i*2 + 1] = right[1]
             
     return contexts, targets
    
@@ -95,14 +97,14 @@ def load_corpus(filename, lower_case=True, min_frequency=3):
             if i % 1000 == 0:
                 print('Loading {} processing line {}'.format(filename, i))
             
-            if line[-1]=='\n':
+            if line[-1] == '\n':
                 line = line[:-1]
             line = line.strip()
             if lower_case:
                 line = line.lower()
             
             corpus += nltk.word_tokenize(line)
-            i+=1
+            i += 1
     
     print('Compute word encoder...')
     word_counter = defaultdict(int)
@@ -124,50 +126,53 @@ def load_corpus(filename, lower_case=True, min_frequency=3):
     return corpus, word2index
 
 
-def train(corpus, word2index, vocabulary_size, num_samples, steps, optimizer_type, learning_rate, embedding_size, skip_gram, batch_size):   
+def save_vocabulary(output_dir, word2index):
+    vocab_fpath = os.path.join(output_dir, 'vocabulary.tsv')  
+    vocab_items = list(word2index.items())
+    vocab_items.sort(key=lambda x:x[1])
+    print(vocab_items[:100])
+    vocab_list = [elem[0] for elem in vocab_items if elem[1] > 0]
+    
+    with open(vocab_fpath, 'w') as vocab_file_out:
+        vocab_file_out.write('<UNK>'+'\n')
+        for word in vocab_list:
+            vocab_file_out.write(word+'\n')
+
+    print("Saved vocabulary to:", vocab_fpath)
+    
+    return vocab_fpath
+
+def train(corpus_num, word2index, vocabulary_size, num_samples, steps, optimizer_type, learning_rate, embedding_size, skip_gram, batch_size):   
     with tf.device('/cpu'):
         with tf.Session() as sess:
             embeddings, contexts, targets, optimizer, loss = build_graph(vocabulary_size, 
 	        num_samples, embedding_size, learning_rate, optimizer_type)
             
-            # summary ops  
+            # Save summary of the training process - can be analyzed with TensorBoard later 
             timestamp = str(int(time.time()))
-            train_summary_dir = os.path.join('./', 'w2v_summaries_' + timestamp) + '/'
-            ensure_dir(train_summary_dir)
-            print('Writing summaries and checkpoints to logdir:' + train_summary_dir)
-            model_ckpt_file = os.path.join('./w2v_summaries_'+ timestamp + '/', 'model.ckpt')    
-            vocab_file = os.path.join(train_summary_dir, 'metadata.tsv')  
-
-            vocab_items = list(word2index.items())
-            vocab_items.sort(key=lambda x:x[1])
-            print(vocab_items[:100])
-            vocab_list = [elem[0] for elem in vocab_items if elem[1] > 0]
+            logs_dir = os.path.join('w2v_logs_' + timestamp)
+            ensure_dir(logs_dir)
+            vocab_fpath = save_vocabulary(logs_dir, word2index)
             
-            with open(vocab_file, 'w') as vocab_file_out:
-                vocab_file_out.write('<UNK>'+'\n')
-                for word in vocab_list:
-                    vocab_file_out.write(word+'\n')
-    
+            print('Writing summaries and checkpoints to logdir:' + logs_dir)
+            model_ckpt_fpath = os.path.join(logs_dir, 'model.ckpt')    
             loss_summary = tf.summary.scalar('loss', loss) 
             config = projector.ProjectorConfig()
             embedding = config.embeddings.add()
             embedding.tensor_name = embeddings.name
-            embedding.metadata_path = vocab_file  
+            embedding.metadata_path = vocab_fpath  
             train_summary_op = tf.summary.merge_all()
-        
-            summary_writer = tf.summary.FileWriter(train_summary_dir, sess.graph)
+            summary_writer = tf.summary.FileWriter(logs_dir, sess.graph)
             projector.visualize_embeddings(summary_writer, config)
 
+            # Initalization
             saver = tf.train.Saver(tf.global_variables())
-
-            # initalize parameters
             sess.run(tf.global_variables_initializer())
-            
             losses = []
             
-            # now do batched SGD training
+            # Batched SGD training
             for current_step in range(steps):
-                inputs, labels = generate_batch(corpus, batch_size=batch_size, skip_gram=skip_gram)
+                inputs, labels = generate_batch(corpus_num, batch_size=batch_size, skip_gram=skip_gram)
                 feed_dict = {contexts: inputs, targets: labels}
                 _, cur_loss = sess.run([optimizer, loss], feed_dict=feed_dict)
                 
@@ -179,7 +184,7 @@ def train(corpus, word2index, vocabulary_size, num_samples, steps, optimizer_typ
                     
                 if current_step % 1000 == 0:
                     print('step',current_step,'mean loss:', np.mean(np.asarray(losses)))
-                    saver.save(sess, model_ckpt_file, current_step)
+                    saver.save(sess, model_ckpt_fpath, current_step)
                     losses = []
                     
             embeddings_np = sess.run(embeddings)
@@ -220,4 +225,3 @@ def main(args):
 
 if __name__ == "__main__":                
     tf.app.run()
-
