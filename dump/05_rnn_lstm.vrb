@@ -1,0 +1,6 @@
+\frametitle{Exercise 2 - Things to try}
+  \begin{itemize}
+  	\item Bidirectional RNNs (e.g. tf.nn.bidirectional\_dynamic\_rnn)
+  	\item Stacking RNNs (tf.contrib.rnn.MultiRNNCell, tf.contrib.rnn.stack\_bidirectional\_dynamic\_rnn)
+  	\item Dropout for RNNs (tf.contrib.rnn.DropoutWrapper)
+  \end{itemize}

@@ -1,0 +1,107 @@
+\mode<presentation>
+
+% Requirement
+\RequirePackage{tikz}
+\RequirePackage{calc}
+\RequirePackage[absolute,overlay]{textpos}
+\RequirePackage{graphicx}
+\RequirePackage{fontspec}
+\RequirePackage{pbox}
+\RequirePackage{etoolbox}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Fonts
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\setsansfont[
+    Extension=.ttf,
+    UprightFont= *-Regular,
+    BoldFont=*-Bold,
+    ItalicFont=*-Regular-Italic,
+    BoldItalicFont=*-Bold-Italic,
+    SmallCapsFont=TheSansUHH-BoldCaps,
+    %SmallCapsFont=*SemiLightCaps,
+    %BoldSmallCapsFont=*-BoldCaps
+    ]{TheSansUHH}
+
+\newfontfamily\UHHTable[Numbers={Monospaced}]{TheSansUHH-Regular.ttf}
+\newfontfamily\UHHSemiLightCaps[]{TheSansUHH-SemiLightCaps.ttf}
+
+\setbeamerfont{title}{size=\large}
+
+%definitions
+% commands
+\newcommand{\faculty}[1]{\def\@facultyuhh{#1}}
+
+\newif\iftotalframesuhh
+\totalframesuhhfalse
+\newcommand{\showtotalframenumber}{\totalframesuhhtrue}
+
+\newif\iflogoeverywhereuhh
+\logoeverywhereuhhfalse
+\newcommand{\showuhhlogoeachframe}{\logoeverywhereuhhtrue}
+
+\newif\ifshowsectiontitleuhh
+\showsectiontitleuhhfalse
+\newcommand{\showsections}{\showsectiontitleuhhtrue}
+
+%lengths
+
+% size of the red uhh signet square
+% this size is used to calculate the size of the logo and the header
+\newlength{\signetsquaresizeuhh}
+\setlength{\signetsquaresizeuhh}{0.065\paperheight}
+
+% there is one signetsquaresizeuhh above, and one below the logo;
+% the text below the signet square has the size of 1/3 of the signetsquaresizeuhh
+\newlength{\headeruhh}
+\setlength{\headeruhh}{3.33\signetsquaresizeuhh}
+
+% the logo-file contains whitespace above and below the actual logo
+\newlength{\logoheightuhh}
+\setlength{\logoheightuhh}{2.485\signetsquaresizeuhh}
+
+\newlength{\footeruhh}
+\setlength{\footeruhh}{0.05\paperheight}
+\newlength{\headsepuhh}
+\setlength{\headsepuhh}{0.007\paperheight}
+%length title
+\newlength{\titlelineheightuhh}
+\setlength{\titlelineheightuhh}{\headsepuhh}
+\newlength{\titlelinewidthuhh}
+\setlength{\titlelinewidthuhh}{0.618\paperwidth}
+\newlength{\titleboxuhh}
+\setlength{\titleboxuhh}{\paperheight-\footeruhh-\headeruhh}
+\newlength{\titlelineposuhh}
+\setlength{\titlelineposuhh}{0.382\titleboxuhh}
+
+% include the logo
+\newsavebox{\logoboxuhh}
+\savebox{\logoboxuhh}{\mbox{\includegraphics[height=\the\logoheightuhh]{up-uhh-logo-u-2010-u-farbe-u-cmyk.pdf}}}
+
+% Settings
+\useinnertheme{uhh}
+\useoutertheme{uhh}
+\usecolortheme{uhh}
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{blocks}[rounded][shadow=true]
+\setbeamercolor{caption name}{fg=black}
+
+%% change the appearance of the navigation bar produced by \insertnavigation
+%% http://tex.stackexchange.com/questions/23151/beamer-infolines-outer-theme-with-miniframe-bullets-only-for-the-current-section
+% make \insertnavigation show only the navigation part for the current frame
+\setbeamertemplate{mini frame in other section}{}
+\patchcmd{\sectionentry}{\hyperlink{Navigation#3}{{\usebeamertemplate{section in head/foot shaded}}}}{}{}{}
+% remove all spaces
+\let\beamer@section@set@min@width=\relax
+\patchcmd{\insertnavigation}{\hskip.3cm}{}{}{}
+\patchcmd{\insertnavigation}{\hskip-1.875ex plus-1fill}{}{}{}
+\patchcmd{\sectionentry}{\hskip1.875ex plus 1fill}{}{}{}
+
+\patchcmd{\slideentry}{\usebeamertemplate{mini frame in other subsection}}{\usebeamertemplate{mini frame in other subsection of current section}}{}{}
+\patchcmd{\slideentry}{\usebeamertemplate{mini frame in other subsection}}{\usebeamertemplate{mini frame in other section}}{}{}
+\patchcmd{\slideentry}{\usebeamertemplate{mini frame in other subsection of current section}}{\usebeamertemplate{mini frame in other subsection}}{}{}
+
+\beamer@compresstrue
+
+\mode<all>

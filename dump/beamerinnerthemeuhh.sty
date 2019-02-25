@@ -1,0 +1,70 @@
+\mode<presentation>
+
+\setbeamertemplate{background}{
+  \begin{tikzpicture}
+    \useasboundingbox (0,0) rectangle(\paperwidth,\paperheight);
+    \fill[color=blueuhh] (0,\the\footeruhh) rectangle
+    (\the\paperwidth,\the\paperheight-\the\headeruhh);
+    \fill[color=title page header.fg] (0,\the\titlelineposuhh) rectangle
+    (\the\titlelinewidthuhh,
+    \the\titlelineposuhh+\the\titlelineheightuhh);
+    \ifnum\thepage>1\relax%
+    \fill[white,opacity=1] (0,0)
+    rectangle(\the\paperwidth,\the\paperheight);
+    \fill[lightgreyuhh,opacity=1.0] (0,0) rectangle (\the\paperwidth,\the\footeruhh);
+
+    \node[black,opacity=1,anchor=mid west,inner sep=0,outer sep=0] at (\the\signetsquaresizeuhh,0.5*\the\footeruhh) {\tiny\insertdate\hspace{2em}\insertshorttitle, \insertshortauthor};
+    \node[black,opacity=1,anchor=mid east,inner sep=0,outer sep=0] at (\the\paperwidth-\the\signetsquaresizeuhh,0.5*\the\footeruhh) {\tiny\UHHTable\insertframenumber\iftotalframesuhh /\inserttotalframenumber\fi};
+
+    \fill[blueuhh,opacity=1.0] (0,\the\paperheight-\the\headeruhh) rectangle (\the\paperwidth,\the\paperheight-\the\headeruhh-\the\headsepuhh);
+    \fi
+  \end{tikzpicture}
+}
+
+% Title page
+\defbeamertemplate*{title page}{uhh}[1][] { \ifnum\thepage<2\relax%
+  \begin{textblock*}{\paperwidth}(0.545\signetsquaresizeuhh,0.455\signetsquaresizeuhh)
+    \usebox{\logoboxuhh}
+  \end{textblock*}
+  \ifdefined\@facultyuhh
+  \newlength{\facultylengthuhh}
+  \newsavebox{\facultybox}
+  %% everything below is tiny (otherwise widthofpbox returns the wrong length)
+  {\tiny \savebox{\facultybox}{\vbox{
+        \scshape Fakultät \\
+        \color{bluetextuhh} \UHHSemiLightCaps für \@facultyuhh}}
+    \settowidth{\facultylengthuhh}{\widthofpbox{\scshape Fakultät \\ \color{bluetextuhh} \UHHSemiLightCaps für \@facultyuhh}}
+    \begin{textblock*}{\paperwidth}(\paperwidth-\signetsquaresizeuhh-\facultylengthuhh,\headeruhh-\signetsquaresizeuhh-\ht\facultybox)
+      \usebox{\facultybox}
+    \end{textblock*}}
+  \fi\fi \newlength{\titletextwidthuhh}
+  \setlength{\titletextwidthuhh}{0.95\titlelinewidthuhh}
+  \newlength{\authorheightuhh}
+  \settoheight{\authorheightuhh}{ \begin{beamercolorbox}[wd=\titletextwidthuhh,leftskip=0cm,#1]{author}
+      \usebeamerfont{author}\insertauthor%
+    \end{beamercolorbox}
+  } \newlength{\authorvskipuhh}
+  \setlength{\authorvskipuhh}{\paperheight-\titlelineposuhh-\authorheightuhh}
+  % TODO: 0.8 ist nur ein QuickFix
+  \setlength{\authorvskipuhh}{0.9\authorvskipuhh}
+  \vskip 0cm%\authorvskipuhh
+
+  \begin{textblock*}{1.1\titletextwidthuhh}(0pt,\authorvskipuhh)
+    \begin{beamercolorbox}[wd=1.1\titletextwidthuhh,leftskip=0.1cm,sep=8pt,#1]{title
+        page header}
+      \usebeamerfont{author}\insertauthor\par%
+    \end{beamercolorbox}%
+  \end{textblock*}
+  \begin{textblock*}{\titletextwidthuhh}(0pt,\paperheight-\titlelineposuhh)
+    \begin{beamercolorbox}[wd=\titletextwidthuhh,leftskip=0.1cm,sep=8pt,#1]{title
+        page header}
+      \usebeamerfont{title}\textsc{\inserttitle}\par%
+    \end{beamercolorbox}%
+  \end{textblock*}
+  \vfill }
+
+
+% Items
+\setbeamertemplate{items}[square]
+
+\mode<all>

@@ -1,0 +1,6 @@
+\frametitle{Tensorboard - embeddings}
+   \begin{itemize}
+		\item Possible to nicely visualize embeddigs, see \url{https://www.tensorflow.org/get_started/embedding_viz}
+		\item Also checkout \url{http://projector.tensorflow.org/}, live demo of pretrained embeddings
+		\includegraphics[width=0.5\textwidth]{04_embed_viz.png}
+	\end{itemize}

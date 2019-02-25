@@ -1,0 +1,81 @@
+Zuerst auf den Login-Knoten anmelden:
+
+ssh -i <ssh_private_key> <username>@hummel1.rrz.uni-hamburg.de 
+
+# Dann auf den Frontend-Knoten:
+
+ssh front1
+
+module: loaded site/slurm
+module: loaded site/tmpdir
+module: loaded site/hummel
+module: loaded env/system-gcc
+
+# Um Tensorflow zu installieren (dies muss nur einmal gemacht werden!):
+
+module unload env
+module load env/cuda-9.0.176_gcc-6.4.0
+module load python/3.6.1
+
+python3 -m pip install --user --upgrade pip setuptools wheel numpy
+
+wget https://storage.googleapis.com/tensorflow/linux/gpu/tensorflow_gpu-1.12.0-cp36-cp36m-linux_x86_64.whl
+
+# Package kompatibel machen:
+
+mv tensorflow_gpu-1.12.0-cp36-cp36m-linux_x86_64.whl tensorflow_gpu-1.12.0-cp36-cp36-linux_x86_64.whl
+
+python3 -m pip install --user tensorflow_gpu-1.12.0-cp36-cp36-linux_x86_64.whl
+
+# (Dieser Schritt dauert ein wenig)
+
+# Jetzt die Installation testen:
+
+LD_LIBRARY_PATH=/sw/compiler/cuda-9.0.176/lib64 python3
+import tensorflow
+
+# Hier wird ein Fehler kommen, wegen der fehlenden Cudnn Bibliothek:
+
+ImportError: libcudnn.so.7: cannot open shared object file: No such file or directory
+
+==> Die cudnn Bibliothek ist nicht teil der Standart Cuda-Installation, muss von https://developer.nvidia.com/cudnn bezogen werden, ggf. Anmeldung als nvidia developper nötig. Dann eine cudnn Version für Cuda 9 auswählen, dann "cuDNN Library for Linux" um ein tgz package zu erhalten. Dieses dann mit "scp -i <ssh_private_key> cudnn-9.0-linux-x64-v7.4.2.24.tgz <username>@hummel1.rrz.uni-hamburg.de:" auf den frontend node kopieren.
+
+(in $HOME):
+
+tar xvfz cudnn-9.0-linux-x64-v7.4.2.24.tgz
+
+# Nochmal bestätigen das alles geklappt hat:
+LD_LIBRARY_PATH=/sw/compiler/cuda-9.0.176/lib64:$HOME/cuda/lib64 python3
+import tensorflow
+
+# Dies sollte jetzt ohne Fehler auch auf dem Front-Knoten klappen
+# Tensorflow ist nun korrekt installiert und die Installation ist permanent (solange die passenden Module für Python etc geladen wurden)
+
+# Beispieljob starten:
+#######################
+
+# Wichtig, als Arbeitsverzeichnis das Userverzeichnis in /work wählen:
+
+cd $WORK
+
+# Wie man Jobs started: https://www.rrz.uni-hamburg.de/services/hpc/hummel-2015/batch-verarbeitung/beispieljob.html
+
+# Ein Beispieljob der zwei Python Prozesse auf verschiedenen GPUs started: tensorflow_test.sh
+
+# Test Pythonscript für diesen Job herunterladen:
+wget https://raw.githubusercontent.com/tensorflow/models/master/tutorials/image/mnist/convolutional.py
+
+# Partition (job queue) für Gpus heißt "gpu"
+# Mit sbatch werden neue Jobs in die queue hinzugefügt und dann ausgeführt (ggf. nach einer gewissen Wartezeit wenn der Cluster sehr ausgelastet ist):
+
+sbatch -p gpu test_job.sh
+
+# Nun mit squeue starten:
+
+squeue -j 783105
+             JOBID PARTITION     NAME     USER ST       TIME  NODES NODELIST(REASON)
+            783105       gpu test_ten  innv662 PD       0:00      1 (Resources)
+
+PD = pending, bzw. queued. Sobald eine GPU frei wird beginnt der Job, im Arbeitsverzeichnis befindet sich dann die Ausgabe, diese kann dann live verfolgt werden sobald der Job läuft:
+
+tail -f $WORK/slurm-783105.out

@@ -1,0 +1,26 @@
+\mode<presentation>
+
+% Frame title
+\newsavebox{\frametitleboxuhh}
+\defbeamertemplate*{frametitle}{texsx}[1][] { \vskip1cm%
+  \begin{beamercolorbox}[wd=\paperwidth,ht=1.2cm]{frametitle}
+  \end{beamercolorbox}
+  \iflogoeverywhereuhh
+  \begin{textblock*}{\paperwidth}(0.545\signetsquaresizeuhh,0.455\signetsquaresizeuhh)
+    \usebox{\logoboxuhh}
+  \end{textblock*}
+  \fi
+  \savebox{\frametitleboxuhh}{\vbox{%
+      \ifshowsectiontitleuhh%
+      {\tiny\insertnavigation{0cm}}\vspace{0.5ex}
+      \fi
+      \textcolor{black}{\Large\insertframetitle}}}
+  \begin{textblock*}{\paperwidth}(2\signetsquaresizeuhh+\wd\logoboxuhh,\headeruhh-\signetsquaresizeuhh-\ht\frametitleboxuhh)
+   \usebox{\frametitleboxuhh}\\
+   \small\insertframesubtitle
+  \end{textblock*}
+}
+
+\setbeamertemplate{footline}{}
+
+\mode<all>

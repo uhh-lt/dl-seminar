@@ -1,0 +1,27 @@
+\frametitle{\#5 Common voice}
+  \begin{itemize}
+	\item Recently released speech dataset from mozilla
+	\item 20000 speakers, some information about age, gender and accent available
+	\item Predict those attributes (separately or together)
+
+  \end{itemize}
+  \begin{tiny}
+  \begin{verbatim}
+  ['cv-valid-dev/sample-004039.mp3', 'are you enjoying london',
+   '1', '0', 'thirties', 'female', 'england', '']
+['cv-valid-dev/sample-004040.mp3', 'they placed the symbols of the pilgrimage on the doors of their houses',
+ '3', '0', 'sixties', 'female', 'us', '']
+['cv-valid-dev/sample-004041.mp3', 'he could always go back to being a shepherd',
+ '3', '0', '', '', '', '']
+['cv-valid-dev/sample-004042.mp3', 'its lower end was still embedded',
+ '6', '0', 'twenties', 'female', '', '']
+['cv-valid-dev/sample-004043.mp3', "i'm going into the desert the man answered turning back to his reading",
+ '1', '0', '', '', '', '']
+['cv-valid-dev/sample-004044.mp3', 'as the sun rose the men began to beat the boy',
+ '2', '0', 'thirties', 'male', 'australia', '']
+['cv-valid-dev/sample-004045.mp3', 'i have to find a man who knows that universal language',
+ '3', '0', 'thirties', 'male', 'us', '']
+['cv-valid-dev/sample-004046.mp3', 'the picnic was ruined by a marching band',
+ '1', '0', 'twenties', 'male', 'scotland', '']
+  \end{verbatim}
+    \end{tiny}

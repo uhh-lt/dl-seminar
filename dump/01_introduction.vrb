@@ -1,0 +1,15 @@
+\frametitle{Small warm up exercise!}
+
+\begin{itemize}
+	\item Calculate the matrix multiplication of a and b. We also change a and b to random matrices:
+\end{itemize}
+
+\begin{lstlisting}
+a = np.random.rand(256, 128)
+b = np.random.rand(128, 512)
+\end{lstlisting}
+
+\begin{itemize}
+	\item Calculate the resulting matrix of shape (256, 512) in TensorFlow.
+\end{itemize}
+

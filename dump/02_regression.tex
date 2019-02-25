@@ -1,0 +1,364 @@
+\documentclass{beamer}
+
+\usetheme{uhh}
+\showtotalframenumber
+\showuhhlogoeachframe
+\showsections
+
+\usepackage{amsmath}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+\usepackage{listings}
+\lstset{
+language=python
+}
+
+\title{Tensorflow -- Regression Models}
+\author{Fabian Barteld, Benjamin Milde}
+\date[20.06.2016]{June 20, 2016}
+
+\AtBeginSection[]
+{
+  %%%%% section title
+  % This is how it would look like in Beamer:
+  % \begin{frame}
+  %     \frametitle{Overview}
+  %     \tableofcontents[sections={2-3},currentsection,sectionstyle=show/hide,subsectionstyle=hide]
+  % \end{frame}
+\begin{frame}[plain]
+\begin{tikzpicture}[overlay]
+  \relax%
+  \fill[blueuhh,opacity=1] (-10,-10)
+  rectangle(\the\paperwidth,\the\paperheight);
+\end{tikzpicture}
+  \begin{tikzpicture}[overlay]
+  \relax%
+  \fill[white,opacity=1] (-5,-1.2)
+  rectangle(\the\paperwidth,0.5) node[pos=0.5,black]{\LARGE\insertsectionhead};
+\end{tikzpicture}
+\end{frame}
+
+%%%% add subsection to show navigation dots
+\subsection{}
+}
+
+\begin{document}
+
+\maketitle
+
+\section{Linear Regression}
+
+% https://medium.com/@saxenarohan97/intro-to-tensorflow-solving-a-simple-regression-problem-e87b42fd4845
+% https://github.com/aymericdamien/TensorFlow-Examples/blob/master/examples/2_BasicModels/linear_regression.py
+\begin{frame}
+\frametitle{Linear Regression}
+
+\begin{itemize}
+\item Given: $(x_1, y_1)$, \ldots, $(x_n,y_n)$
+\item Goal: find $w$ and $b$ such that
+  \begin{displaymath}
+    \hat{y}_i = wx_i + b
+  \end{displaymath}
+  fits the data, i.e.
+  \begin{displaymath}
+    \argmin_{w, b} \frac{\sum^n_{i=1} (\hat{y}_i - y_i)^2}{n}
+  \end{displaymath}
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Define model parameters}
+Model: $\hat{y}_i = wx_i + b$\\
+Parameters: $w$, $b$, tensors of rank $0$
+
+\begin{lstlisting}
+w = tf.Variable(tf.ones([]),
+  name="weight")
+b = tf.Variable(tf.zeros([]),
+  name="bias")
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Define the model}
+
+\begin{displaymath}
+  \begin{pmatrix} \hat{y}_1\\\vdots\\\hat{y}_n\end{pmatrix} =
+  \begin{pmatrix} x_1\\\vdots\\x_n\end{pmatrix} \odot
+  \begin{pmatrix} w\\\vdots\\w\end{pmatrix} +
+  \begin{pmatrix} b\\\vdots\\b\end{pmatrix}
+\end{displaymath}
+
+\begin{lstlisting}
+yhat = tf.add(tf.multiply(X, w), b)
+\end{lstlisting}
+
+{\footnotesize The scalars $w$ and $b$ are converted into vectors of the same
+length as X (broadcast); \url{https://www.tensorflow.org/performance/xla/broadcasting}}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Define the loss}
+
+\begin{displaymath}
+  \frac{\sum^n_{i=1} (\hat{y}_i - y_i)^2}{n}
+\end{displaymath}
+
+\begin{lstlisting}
+loss = tf.reduce_mean(tf.square(yhat - Y))
+\end{lstlisting}
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Optimization}
+
+\begin{lstlisting}
+## Optimizer
+optimizer = tf.train.GradientDescentOptimizer(
+  0.01 # learning rate
+  ).minimize(loss)
+
+with tf.Session() as sess:
+  ## initalize parameters
+  sess.run(tf.global_variables_initializer())
+
+  for i in range(20):
+      ## run one epoch
+      sess.run(optimizer)
+\end{lstlisting}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Hands on}
+
+Do a linear regression to learn $y = 2x + 1$
+
+\begin{lstlisting}
+X = np.array([1., 2., 3., 4., 5., 6.],
+      dtype=np.float32).reshape(6, 1)
+Y = 2*X + 1
+\end{lstlisting}
+\end{frame}
+
+
+\section{Multiple Linear Regression}
+
+\begin{frame}[fragile]
+\frametitle{Defining the input}
+
+Tensorflow graphs use placholders for input values
+
+\begin{lstlisting}
+input_dim = 13
+
+X = tf.placeholder(tf.float32, [None, input_dim])
+Y = tf.placeholder(tf.float32, [None, 1])
+\end{lstlisting}
+
+Defines placeholders for two tensors of rank 2,\\
+the shape is [Number of examples, Dimension]
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Adapting the model}
+
+\begin{displaymath}
+  \begin{pmatrix} \hat{y}_1\\\vdots\\\hat{y}_n\end{pmatrix} =
+  \begin{pmatrix} x_{1,1} & \hdots & x_{1,input\_dim}\\\vdots && \vdots\\x_{n,1} & \hdots & x_{n,input\_dim}\end{pmatrix} \times
+  \begin{pmatrix} w_1 \\\vdots\\w_{input\_dim}\end{pmatrix} +
+  \begin{pmatrix} b\\\vdots\\b\end{pmatrix}
+\end{displaymath}
+
+\begin{lstlisting}
+w = tf.Variable(tf.ones(input_dim))
+yhat = tf.add(tf.matmul(X, w), b)
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Getting data into the model}
+
+\begin{lstlisting}
+## Optimizer
+optimizer = tf.train.GradientDescentOptimizer(
+  0.01 # learning rate
+  ).minimize(loss)
+
+with tf.Session() as sess:
+  ## initalize parameters
+  sess.run(tf.global_variables_initializer())
+
+  for i in range(20):
+      ## run one epoch
+      sess.run(optimizer, {X: x_data, Y: y_data})
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Hands on}
+
+Do a multiple linear regression with Boston housing prices
+
+\begin{lstlisting}
+from sklearn.datasets import load_boston
+from sklearn.preprocessing import scale
+
+data_X, data_Y = load_boston(True)
+data_X = scale(data_X)
+data_Y = data_Y.reshape(len(data_Y), 1)
+\end{lstlisting}
+\end{frame}
+
+\section{Logistic regression}
+
+% https://www.tensorflow.org/tutorials/wide
+% https://github.com/aymericdamien/TensorFlow-Examples/blob/master/examples/2_BasicModels/logistic_regression.py
+\begin{frame}[fragile]
+\frametitle{Multiple Logistic regression}
+
+$p_i = S(WX_i + b)$
+
+Loss (Binary-crossentropy):
+
+\[\frac{1}{N}\sum_{i=1}^N (y_i\log{p_i} + (1-y_i)(\log{1-p_i}))\]
+
+In tensorflow:\\
+\footnotesize{\textcolor{reduhh}{Don't use -- numerical problems!}}
+
+\begin{lstlisting}
+p = tf.sigmoid(yhat)
+loss = tf.reduce_mean(y*tf.log(p) + (1-y)*tf.log(1-p))
+\end{lstlisting}
+
+\pause
+
+Optimized version (\footnotesize{\textcolor{green}{Use this instead!}})
+\begin{lstlisting}
+loss = tf.reduce_mean(
+  tf.nn.sigmoid_cross_entropy_with_logits(
+      labels=y, logits=yhat))
+\end{lstlisting}
+
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Scaling the input data}
+
+\begin{lstlisting}
+from sklearn.preprocessing import StandardScaler
+
+scaler = StandardScaler()
+scaler.fit(x_train)
+x_train = scaler.transform(x_train)
+x_test = scaler.transform(x_test)
+\end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{Hands on: Binary classification}
+
+Dataset: \url{http://scikit-learn.org/stable/modules/generated/sklearn.datasets.load_breast_cancer.html}
+
+\begin{footnotesize}
+\begin{lstlisting}
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+
+## load the data
+bc = load_breast_cancer()
+x_data = bc['data']       # shape: (569,30)
+y_data = bc['target'].reshape(
+  len(bc['target']), 1) # shape: (569, 1)
+
+x_train, x_test, y_train, y_test =
+  train_test_split(x_data, y_data)
+
+\end{lstlisting}
+\end{footnotesize}
+\end{frame}
+
+\begin{frame}[fragile]
+\frametitle{One-hot encoding of nominal features}
+Names dataset
+\url{http://www.nltk.org/book/ch06.html}
+
+\begin{footnotesize}
+\begin{lstlisting}
+def gender_features(word):
+  return {'last_letter': word[-1]}
+
+def gender_features(word):
+  return {'suffix1': word[-1:],
+          'suffix2': word[-2:]}
+\end{lstlisting}
+\end{footnotesize}
+\pause
+\vspace{-1.5ex}
+
+\begin{footnotesize}
+\begin{lstlisting}
+from sklearn.feature_extraction import DictVectorizer
+feat_vectorizer = DictVectorizer(
+  dtype=numpy.int32, sparse=False)
+train_X = feat_vectorizer.fit_transform(
+  train_feats)
+test_X = feat_vectorizer.transform(test_feats)
+\end{lstlisting}
+\end{footnotesize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Stochastic gradient descent}
+
+\begin{lstlisting}
+with tf.Session() as sess:
+    ## initalize parameters
+    sess.run(tf.global_variables_initializer())
+
+    for i in range(20):
+        ## run one epoch
+        ## update for each training example
+        for x, y in zip(x_data, y_data):
+            sess.run(optimizer, {X: x, Y: y})
+\end{lstlisting}
+
+\pause
+Usually the data is shuffled and\\ passed in small batches to the optimizer.
+
+\end{frame}
+
+
+\begin{frame}[fragile]
+\frametitle{Hands on}
+
+Fit a logistic regression model to the names dataset
+
+\url{http://www.nltk.org/book/ch06.html}
+\begin{lstlisting}
+import nltk
+## names must be installed by running
+## nltk.download('names')
+from nltk.corpus import names
+import random
+
+labeled_names = ( 
+  [(n, 0) for n in names.words('male.txt')] +
+  [(n, 1) for n in names.words('female.txt')])
+random.shuffle(labeled_names)
+
+\end{lstlisting}
+\end{frame}
+
+
+\end{document}
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-engine: luatex
+%%% End:

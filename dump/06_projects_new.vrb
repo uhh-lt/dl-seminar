@@ -1,0 +1,7 @@
+\frametitle{Extra: One Million Posts Corpus}
+  \begin{itemize}
+\item DER STANDARD is an Austrian daily broadsheet newspaper.
+\item The data set contains a selection of user posts from the 12 month time span from 2015-06-01 to 2016-05-31.
+\item There are 11,773 labeled and 1,000,000 unlabeled posts in the data set.
+\item Labels: \textbf{Sentiment} (negative/neutral/positive), \textbf{Off-Topic} (yes/no), \textbf{Inappropriate} (yes/no), \textbf{Discriminating} (yes/no)
+  \end{itemize}

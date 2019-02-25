@@ -1,0 +1,72 @@
+Florian Schneider
+Julian Betz (*)
+julian.betz@studium.uni-hamburg.de
+bav6862
+
+G2P
+
+####
+
+Felix Fröhlich 3froehli@informatik.uni-hamburg.de
+Sönke Behrendt 3sbehren@informatik.uni-hamburg.de (*)
+
+BAO6253
+Uni Kennung: intx224 
+pub key
+
+Common voice
+
+####
+
+Daniel Speck
+Max Friedrich (*)
+
+2mfriedr@informatik.uni-hamburg.de
+BAN7159
+insx262
+
+pub key
+
+One million post corpus
+
+####
+
+Michael Eisele
+Tim Dobert (*)
+Sasha Wichert
+
+BAN5539
+insx182
+
+smily challenge
+
+####
+
+Philipp Heidenreich
+Dirk Johannßen (*)
+bav8147
+pub key email
+
+Psycho
+
+####
+
+Levente Schoenherr (levente.schoenherr@studium.uni-hamburg.de) (*)
+Steffen Stahlhacke (steffen.stahlhacke@studium.uni-hamburg.de)
+
+bav7243
+
+GermaNER
+
+####
+
+Christopher Marx (*)
+Andre Simon 
+3marx@informatik.uni-hamburg.de
+
+bao5132
+fwtx154
+
+Irony detection
+
+(*) cluster access

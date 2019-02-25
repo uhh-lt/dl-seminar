@@ -1,0 +1,18 @@
+\frametitle{Hands on}
+
+Fit a logistic regression model to the names dataset
+
+\url{http://www.nltk.org/book/ch06.html}
+\begin{lstlisting}
+import nltk
+## names must be installed by running
+## nltk.download('names')
+from nltk.corpus import names
+import random
+
+labeled_names = (
+  [(n, 0) for n in names.words('male.txt')] +
+  [(n, 1) for n in names.words('female.txt')])
+random.shuffle(labeled_names)
+
+\end{lstlisting}
